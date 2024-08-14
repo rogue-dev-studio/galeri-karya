@@ -7,7 +7,7 @@
     <title>PMS | Responsive Bootstrap 4 Admin Dashboard Template</title>
 
     <!-- Favicon -->
-    <link rel="shortcut icon" href="../assets/images/favicon.ico" />
+    <link rel="shortcut icon" href="../favicon.png" />
     <link rel="stylesheet" href="../assets/css/backend-plugin.min.css">
     <link rel="stylesheet" href="../assets/css/backend.css?v=1.0.0">
     <link rel="stylesheet" href="../assets/vendor/line-awesome/dist/line-awesome/css/line-awesome.min.css">
@@ -1280,72 +1280,108 @@
     <ul id="repo-list"></ul>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
     <script>
-        fetch('https://api.github.com/search/repositories?q=topic:portfolio-aris-hadisopiyan')
-            .then(response => response.json())
-            .then(async data => {
+        const RATE_LIMIT = 10; // adjust this value based on your needs
+        const RATE_LIMIT_DELAY = 1000; // 1 second delay between requests
+
+        let requestCount = 0;
+        let requestQueue = [];
+
+        function fetchWithRateLimit(url) {
+            return new Promise((resolve, reject) => {
+                requestQueue.push({ url, resolve, reject });
+                processQueue();
+            });
+        }
+
+        function processQueue() {
+            if (requestCount < RATE_LIMIT && requestQueue.length > 0) {
+                const { url, resolve, reject } = requestQueue.shift();
+                requestCount++;
+                fetch(url)
+                    .then(response => response.json())
+                    .then(data => {
+                        resolve(data);
+                        requestCount--;
+                        processQueue();
+                    })
+                    .catch(error => {
+                        reject(error);
+                        requestCount--;
+                        processQueue();
+                    });
+            } else {
+                setTimeout(processQueue, RATE_LIMIT_DELAY);
+            }
+        }
+
+        fetchWithRateLimit('https://api.github.com/search/repositories?q=topic:portfolio-aris-hadisopiyan')
+            .then(data => {
                 const repoList = document.getElementById('repo-list');
                 // Urutkan data.items berdasarkan tanggal update
                 data.items.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
-                data.items.forEach(async repo => {
-                    const filesResponse = await fetch(`https://api.github.com/repos/${repo.owner.login}/${repo.name}/contents/`);
-                    const filesData = await filesResponse.json();
-                    const hasThumbnail = filesData.some(file => file.name === 'thumbnail.png');
-                    const updatedAt = moment(repo.updated_at).fromNow();
-                    const languages = await fetch(`https://api.github.com/repos/${repo.full_name}/languages`)
-                        .then(response => response.json());
-                    // const languageList = Object.keys(languages).map(language => `<a href="#"  class="mt-2 badge badge-primary">${language}</a>`).join(' ');
-                    const badgeClasses = [
-                        'badge-primary',
-                        'badge-secondary',
-                        'badge-success',
-                        'badge-danger',
-                        'badge-warning',
-                        'badge-info',
-                        'badge-light',
-                        'badge-dark'
-                    ];
+                data.items.forEach(repo => {
+                    fetchWithRateLimit(`https://api.github.com/repos/${repo.owner.login}/${repo.name}/contents/`)
+                        .then(filesData => {
+                            const hasThumbnail = filesData.some(file => file.name === 'thumbnail.png');
+                            const updatedAt = moment(repo.updated_at).fromNow();
+                            fetchWithRateLimit(`https://api.github.com/repos/${repo.full_name}/languages`)
+                                .then(languages => {
+                                    const badgeClasses = [
+                                        'badge-primary',
+                                        'badge-secondary',
+                                        'badge-success',
+                                        'badge-danger',
+                                        'badge-warning',
+                                        'badge-info',
+                                        'badge-light',
+                                        'badge-dark'
+                                    ];
 
-                    const languageList = Object.keys(languages).map((language) => {
-                        const randomIndex = Math.floor(Math.random() * badgeClasses.length);
-                        const badgeClass = badgeClasses[randomIndex];
-                        return `<a href="#" class="mb-1 mt-1 badge ${badgeClass}">${language}</a>`;
-                    }).join(' ');
-                    const tagList = repo.topics.map((topic) => {
-                        const randomIndex = Math.floor(Math.random() * badgeClasses.length);
-                        const tagClass = badgeClasses[randomIndex];
-                        return `<a href="#" class="mb-1 mt-1 badge ${tagClass}">${topic}</a>`;
-                    }).join(' ');
-                    const repoHTML = `
+                                    const languageList = Object.keys(languages).map((language) => {
+                                        const randomIndex = Math.floor(Math.random() * badgeClasses.length);
+                                        const badgeClass = badgeClasses[randomIndex];
+                                        return `<a href="#" class="mb-1 mt-1 badge ${badgeClass}">${language}</a>`;
+                                    }).join(' ');
+
+                                    const tagList = repo.topics.map((topic) => {
+                                        const randomIndex = Math.floor(Math.random() * badgeClasses.length);
+                                        const tagClass = badgeClasses[randomIndex];
+                                        return `<a href="#" class="mb-1 mt-1 badge ${tagClass}">${topic}</a>`;
+                                    }).join(' ');
+
+                                    const repoHTML = `
                         <div class="col-lg-4 col-md-6">
-                            <div class="card card-block card-stretch card-height">
-                                <div class="card-header">
-                                    <h5 class="float-left"><a href="${repo.html_url}" class="repo-name">${repo.full_name.split('/')[1].slice(0, 20)}${repo.full_name.split('/')[1].length > 20 ? ' ...' : ''}</a></h5>
-                                    <div class="float-right"><span class="ri-star-fill m-0 text-warning stargazers_count"></span><span class="m-0 stargazers_count">${repo.stargazers_count}</span></div>
-                                </div>
-                                <div class="card-body">
-                                    ${(hasThumbnail) ? `<img src="https://raw.githubusercontent.com/${repo.owner.login}/${repo.name}/master/thumbnail.png" class="img-fluid rounded" alt="thumbnail.png" />` : `<img src="../assets/images/no-image.jpg" class="img-fluid rounded" alt="Responsive image">`}
-                                    <p class="mb-1">${repo.description}</p>
-
-                                    <p class="mb-1 mt-1">Topics :</p>
-                                    ${tagList}
-
-                                    <p class="mb-1 mt-1">Languages :</p>
-                                    ${languageList}
-
-                                    <div class="d-flex align-items-center justify-content-between pt-3 border-top">
-                                        <div class="iq-media-group">
-                                            <a href="#" class="iq-media">
-                                                <img class="img-fluid avatar-40 rounded-circle"
-                                                    src="${repo.owner.avatar_url}" alt="${repo.owner.login}">
-                                            </a>
-                                        </div>
-                                        <span class="updated-text">Updated ${updatedAt}</span>
-                                    </div>
-                                </div>
+                          <div class="card card-block card-stretch card-height">
+                            <div class="card-header">
+                              <h5 class="float-left"><a href="${repo.html_url}" class="repo-name">${repo.full_name.split('/')[1].slice(0, 20)}${repo.full_name.split('/')[1].length > 20 ? ' ...' : ''}</a></h5>
+                              <div class="float-right"><span class="ri-star-fill m-0 text-warning stargazers_count"></span><span class="m-0 stargazers_count">${repo.stargazers_count}</span></div>
                             </div>
+                            <div class="card-body">
+                              ${(hasThumbnail) ? `<img src="https://raw.githubusercontent.com/${repo.owner.login}/${repo.name}/master/thumbnail.png" class="img-fluid rounded" alt="thumbnail.png" />` : `<img src="../assets/images/no-image.jpg" class="img-fluid rounded" alt="Responsive image">`}
+                              <p class="mb-1">${repo.description}</p>
+      
+                              <p class="mb-1 mt-1">Topics :</p>
+                              ${tagList}
+      
+                              <p class="mb-1 mt-1">Languages :</p>
+                              ${languageList}
+      
+                              <div class="d-flex align-items-center justify-content-between pt-3 border-top">
+                                <div class="iq-media-group">
+                                  <a href="#" class="iq-media">
+                                    <img class="img-fluid avatar-40 rounded-circle"
+                                      src="${repo.owner.avatar_url}" alt="${repo.owner.login}">
+                                  </a>
+                                </div>
+                                <span class="updated-text">Updated ${updatedAt}</span>
+                              </div>
+                            </div>
+                          </div>
                         </div>
-              `;
-                    repoList.innerHTML += repoHTML;
+                      `;
+                                    repoList.innerHTML += repoHTML;
+                                });
+                        });
                 });
             });
     </script>
