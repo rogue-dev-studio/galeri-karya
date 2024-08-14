@@ -1323,12 +1323,6 @@
                                     <div class="float-right"><span class="ri-star-fill m-0 text-warning stargazers_count"></span><span class="m-0 stargazers_count">${repo.stargazers_count}</span></div>
                                 </div>
                                 <div class="card-body">
-                                    <div class="d-flex align-items-center justify-content-between mb-4">
-                                        <div id="circle-progress-12" class="circle-progress circle-progress-success"
-                                            data-min-value="0" data-max-value="100" data-value="40" data-type="percent">
-                                        </div>
-                                    </div>
-                                    
                                     ${(hasThumbnail) ? `<img src="https://raw.githubusercontent.com/${repo.owner.login}/${repo.name}/master/thumbnail.png" class="img-fluid rounded" alt="thumbnail.png" />` : `<img src="../recent-work/assets/images/no-image.jpg" class="img-fluid rounded" alt="Responsive image">`}
                                     <p class="mb-1">${repo.description}</p>
 
