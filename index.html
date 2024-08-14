@@ -1236,7 +1236,7 @@
       .then(data => {
         const repoList = document.getElementById('repo-list');
         // Urutkan data.items berdasarkan tanggal update
-        data.items.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+        data.items.sort((a, b) => Date.parse(b.updated_at) - Date.parse(a.updated_at));
         data.items.forEach(repo => {
           fetchWithRateLimit(`https://api.github.com/repos/${repo.owner.login}/${repo.name}/contents/`)
             .then(filesData => {
