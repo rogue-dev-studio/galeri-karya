@@ -478,7 +478,7 @@
                                                 <div class="btn bg-body"><span class="h6">Categories :</span> All<i
                                                         class="ri-arrow-down-s-line ml-2 mr-0"></i></div>
                                             </div>
-                                            <div class="dropdown-menu dropdown-menu-right"
+                                            <!-- <div class="dropdown-menu dropdown-menu-right"
                                                 aria-labelledby="dropdownMenuButton03">
                                                 <a class="dropdown-item" href="#"><i
                                                         class="ri-attachment-line mr-2"></i>All</a>
@@ -486,6 +486,9 @@
                                                         class="ri-file-copy-line mr-2"></i>On Github</a>
                                                 <a class="dropdown-item" href="#"><i class="ri-mic-line mr-2"></i>On
                                                     YouTube</a>
+                                            </div> -->
+                                            <div id="folderList" class="dropdown-menu dropdown-menu-right"
+                                                aria-labelledby="dropdownMenuButton03">
                                             </div>
                                         </div>
                                         <div class="list-grid-toggle d-flex align-items-center mr-3">
@@ -858,108 +861,122 @@ border-radius: 8px; will-change: transform;">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
 
     <script>
+
         const RATE_LIMIT = 60; // 60 requests per hour
         const RATE_LIMIT_DELAY = 60000; // 1 minute delay between requests
 
         let requestCount = 0;
         let requestQueue = [];
 
-        function fetchWithRateLimit(url) {
-            return new Promise((resolve, reject) => {
-                requestQueue.push({ url, resolve, reject });
-                processQueue();
-            });
-        }
+        const GIST_URL = 'https://gist.githubusercontent.com/omeans-team/af90a14cf70e1f8bddaccc90e4af6186/raw/token.txt';
 
-        function processQueue() {
-            if (requestCount < RATE_LIMIT && requestQueue.length > 0) {
-                const { url, resolve, reject } = requestQueue.shift();
-                requestCount++;
-                fetch(url)
-                    .then(response => response.json())
-                    .then(data => {
-                        resolve(data);
-                        requestCount--;
-                        processQueue();
-                    })
-                    .catch(error => {
-                        reject(error);
-                        requestCount--;
+        fetch(GIST_URL)
+            .then(response => response.text())
+            .then(token => {
+                const GITHUB_API_TOKEN = token.trim();
+
+                function fetchWithRateLimit(url) {
+                    return new Promise((resolve, reject) => {
+                        requestQueue.push({ url, resolve, reject });
                         processQueue();
                     });
-            } else {
-                setTimeout(processQueue, RATE_LIMIT_DELAY);
-            }
-        }
+                }
 
-        fetchWithRateLimit('https://api.github.com/search/repositories?q=topic:portfolio-aris-hadisopiyan')
-        .then(data => {
-            const repoList = document.getElementById('repo-list');
-            const repoList2 = document.getElementById('repo-list-2');
-            // Urutkan data.items berdasarkan tanggal update
-            data.items.sort((a, b) => Date.parse(b.updated_at) - Date.parse(a.updated_at));
-            data.items.forEach(repo => {
-                fetchWithRateLimit(`https://api.github.com/repos/${repo.owner.login}/${repo.name}/contents/`)
-                .then(filesData => {
-                    const hasThumbnail = filesData.some(file => file.name === 'thumbnail.png');
-                    const updatedAt = moment(repo.updated_at).fromNow();
-                    fetchWithRateLimit(`https://api.github.com/repos/${repo.full_name}/languages`)
-                    .then(languages => {
-                        const badgeClasses = [
-                            'badge-primary',
-                            'badge-secondary',
-                            'badge-success',
-                            'badge-danger',
-                            'badge-warning',
-                            'badge-info',
-                            'badge-light',
-                            'badge-dark'
-                        ];
+                function processQueue() {
+                    if (requestCount < RATE_LIMIT && requestQueue.length > 0) {
+                        const { url, resolve, reject } = requestQueue.shift();
+                        requestCount++;
+                        fetch(url, {
+                            headers: {
+                                'Authorization': `Bearer ${GITHUB_API_TOKEN}`,
+                                'Content-Type': 'application/json'
+                            }
+                        })
+                            .then(response => response.json())
+                            .then(data => {
+                                resolve(data);
+                                requestCount--;
+                                processQueue();
+                            })
+                            .catch(error => {
+                                reject(error);
+                                requestCount--;
+                                processQueue();
+                            });
+                    } else {
+                        setTimeout(processQueue, RATE_LIMIT_DELAY);
+                    }
+                }
 
-                        const languageList = Object.keys(languages).map((language) => {
-                            const randomIndex = Math.floor(Math.random() * badgeClasses.length);
-                            const badgeClass = badgeClasses[randomIndex];
-                            return `<a href="#" class="mb-1 mt-1 badge ${badgeClass}">${language}</a>`;
-                        }).join(' ');
+                fetchWithRateLimit('https://api.github.com/search/repositories?q=topic:portfolio-aris-hadisopiyan')
+                    .then(data => {
+                        const repoList = document.getElementById('repo-list');
+                        const repoList2 = document.getElementById('repo-list-2');
+                        // Urutkan data.items berdasarkan tanggal update
+                        data.items.sort((a, b) => Date.parse(b.updated_at) - Date.parse(a.updated_at));
+                        data.items.forEach(repo => {
+                            fetchWithRateLimit(`https://api.github.com/repos/${repo.owner.login}/${repo.name}/contents/`)
+                                .then(filesData => {
+                                    const hasThumbnail = filesData.some(file => file.name === 'thumbnail.png');
+                                    const updatedAt = moment(repo.updated_at).fromNow();
+                                    fetchWithRateLimit(`https://api.github.com/repos/${repo.full_name}/languages`)
+                                        .then(languages => {
+                                            const badgeClasses = [
+                                                'badge-primary',
+                                                'badge-secondary',
+                                                'badge-success',
+                                                'badge-danger',
+                                                'badge-warning',
+                                                'badge-info',
+                                                'badge-light',
+                                                'badge-dark'
+                                            ];
 
-                        const tagList = repo.topics.map((topic) => {
-                            const randomIndex = Math.floor(Math.random() * badgeClasses.length);
-                            const tagClass = badgeClasses[randomIndex];
-                            return `<a href="#" class="mb-1 mt-1 badge ${tagClass}">${topic}</a>`;
-                        }).join(' ');
+                                            const languageList = Object.keys(languages).map((language) => {
+                                                const randomIndex = Math.floor(Math.random() * badgeClasses.length);
+                                                const badgeClass = badgeClasses[randomIndex];
+                                                return `<a href="#" class="mb-1 mt-1 badge ${badgeClass}">${language}</a>`;
+                                            }).join(' ');
 
-                        const repoHTML = `
-                            <div class="col-lg-4 col-md-6">
-                            <div class="card card-block card-stretch card-height">
-                                <div class="card-header">
-                                <h5 class="float-left"><a href="${repo.html_url}" class="repo-name">${repo.full_name.split('/')[1].slice(0, 20)}${repo.full_name.split('/')[1].length > 20 ? ' ...' : ''}</a></h5>
-                                <div class="float-right"><span class="ri-star-fill m-0 text-warning stargazers_count"></span><span class="m-0 stargazers_count">${repo.stargazers_count}</span></div>
-                                </div>
-                                <div class="card-body">
-                                ${(hasThumbnail) ? `<img src="https://raw.githubusercontent.com/${repo.owner.login}/${repo.name}/master/thumbnail.png" class="img-fluid rounded" alt="thumbnail.png" />` : `<img src="../assets/images/no-image.jpg" class="img-fluid rounded" alt="Responsive image">`}
-                                <p class="mb-1">${repo.description}</p>
-                
-                                <p class="mb-1 mt-1">Topics :</p>
-                                ${tagList}
-                
-                                <p class="mb-1 mt-1">Languages :</p>
-                                ${languageList}
-                
-                                <div class="d-flex align-items-center justify-content-between pt-3 border-top">
-                                    <div class="iq-media-group">
-                                    <a href="#" class="iq-media">
-                                        <img class="img-fluid avatar-40 rounded-circle"
-                                        src="${repo.owner.avatar_url}" alt="${repo.owner.login}">
-                                    </a>
-                                    </div>
-                                    <small class="text-muted">Last updated ${updatedAt}</small>
-                                </div>
-                                </div>
-                            </div>
-                            </div>
-                        `;
-                        
-                        const repoHTML2 = `
+                                            const tagList = repo.topics.map((topic) => {
+                                                const randomIndex = Math.floor(Math.random() * badgeClasses.length);
+                                                const tagClass = badgeClasses[randomIndex];
+                                                return `<a href="#" class="mb-1 mt-1 badge ${tagClass}">${topic}</a>`;
+                                            }).join(' ');
+
+                                            const repoHTML = `
+                                        <div class="col-lg-4 col-md-6">
+                                        <div class="card card-block card-stretch card-height">
+                                            <div class="card-header">
+                                            <h5 class="float-left"><a href="${repo.html_url}" class="repo-name">${repo.full_name.split('/')[1].slice(0, 20)}${repo.full_name.split('/')[1].length > 20 ? ' ...' : ''}</a></h5>
+                                            <div class="float-right"><span class="ri-star-fill m-0 text-warning stargazers_count"></span><span class="m-0 stargazers_count">${repo.stargazers_count}</span></div>
+                                            </div>
+                                            <div class="card-body">
+                                            ${(hasThumbnail) ? `<img src="https://raw.githubusercontent.com/${repo.owner.login}/${repo.name}/master/thumbnail.png" class="img-fluid rounded" alt="thumbnail.png" />` : `<img src="../assets/images/no-image.jpg" class="img-fluid rounded" alt="Responsive image">`}
+                                            <p class="mb-1">${repo.description}</p>
+                    
+                                            <p class="mb-1 mt-1">Topics :</p>
+                                            ${tagList}
+                    
+                                            <p class="mb-1 mt-1">Languages :</p>
+                                            ${languageList}
+                    
+                                            <div class="d-flex align-items-center justify-content-between pt-3 border-top">
+                                                <div class="iq-media-group">
+                                                <a href="#" class="iq-media">
+                                                    <img class="img-fluid avatar-40 rounded-circle"
+                                                    src="${repo.owner.avatar_url}" alt="${repo.owner.login}">
+                                                </a>
+                                                </div>
+                                                <small class="text-muted">Last updated ${updatedAt}</small>
+                                            </div>
+                                            </div>
+                                        </div>
+                                        </div>
+                                    `;
+
+
+                                            const repoHTML2 = `
                             <div class="col-lg-6">
                                 <div class="card">
                                     <div class="card-body">
@@ -992,16 +1009,44 @@ border-radius: 8px; will-change: transform;">
                             </div>
                         `;
 
-                        repoList.innerHTML += repoHTML;
-                        repoList2.innerHTML += repoHTML2;
+                                            repoList.innerHTML += repoHTML;
+                                            repoList2.innerHTML += repoHTML2;
+                                        });
+                                });
+                        });
                     });
-                });
-            });
-        });
+            })
+            .catch(error => console.error(error));
+
     </script>
 
+    <script>
 
+        const folderList = document.getElementById('folderList');
+        const gistUrl = 'https://gist.githubusercontent.com/omeans-team/af90a14cf70e1f8bddaccc90e4af6186/raw/token.txt';
 
+        fetch(gistUrl)
+            .then(response => response.text())
+            .then(token => {
+                fetch('https://api.github.com/repos/omeans-team/recent-work/contents/work-contents/categories', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        data.forEach(item => {
+                            if (item.type === 'dir') {
+                                const link = document.createElement('a');
+                                link.classList.add('dropdown-item');
+                                link.href = `https://github.com/omeans-team/recent-work/tree/main/work-contents/categories/${item.name}`;
+                                link.innerHTML = `<i class="ri-folder-line mr-2"></i>${item.name}`;
+                                folderList.appendChild(link);
+                            }
+                        });
+                    });
+            });
+    </script>
     <!-- Backend Bundle JavaScript -->
     <script src="../assets/js/backend-bundle.min.js"></script>
 
