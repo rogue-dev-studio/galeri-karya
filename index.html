@@ -892,7 +892,7 @@ border-radius: 8px; will-change: transform;">
                                         <div class="float-right"><span class="ri-star-fill m-0 text-warning stargazers_count"></span><span class="m-0 stargazers_count">${repo.stargazers_count}</span></div>
                                         </div>
                                         <div class="card-body">
-                                        ${(hasThumbnail) ? `<img src="https://raw.githubusercontent.com/${repo.owner.login}/${repo.name}/master/thumbnail.png" class="img-fluid rounded" alt="thumbnail.png" />` : `<img src="../no-image.jpg" class="img-fluid rounded" alt="Responsive image">`}
+                                        ${(hasThumbnail) ? `<img src="https://raw.githubusercontent.com/${repo.owner.login}/${repo.name}/master/thumbnail.png" class="img-fluid rounded" alt="thumbnail.png" />` : `<img src="no-image.jpg" class="img-fluid rounded" alt="Responsive image">`}
                                         <p class="mb-1">${repo.description}</p>
                 
                                         <p class="mb-1 mt-1">Topics :</p>
@@ -923,7 +923,7 @@ border-radius: 8px; will-change: transform;">
                                     <div class="row">
                                         <div class="col-sm-8">
                                             <div class="d-flex align-items-center">
-                                                ${(hasThumbnail) ? `<img src="https://raw.githubusercontent.com/${repo.owner.login}/${repo.name}/master/thumbnail.png" class="img-thumbnail w-100 img-fluid rounded" alt="thumbnail.png" />` : `<img src="../no-image.jpg" class="img-thumbnail w-100 img-fluid rounded" alt="Responsive image">`}
+                                                ${(hasThumbnail) ? `<img src="https://raw.githubusercontent.com/${repo.owner.login}/${repo.name}/master/thumbnail.png" class="img-thumbnail w-100 img-fluid rounded" alt="thumbnail.png" />` : `<img src="no-image.jpg" class="img-thumbnail w-100 img-fluid rounded" alt="Responsive image">`}
                                                 <div class="ml-3 col-sm-8">
                                                     <h5 class="mb-1"><a href="${repo.html_url}" class="repo-name">${repo.full_name.split('/')[1].slice(0, 20)}${repo.full_name.split('/')[1].length > 20 ? ' ...' : ''}</a></h5>
                                                     <p class="mb-1">${repo.description}</p>
