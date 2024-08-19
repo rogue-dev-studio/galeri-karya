@@ -796,10 +796,16 @@ border-radius: 8px; will-change: transform;">
     </div>
   </footer>
 
+  <div class="video-container">
+
+    <!-- Video items will be rendered here -->
+
+</div>
 
   <ul id="repo-list"></ul>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://apis.google.com/js/api.js"></script>
   <script>
 
     const RATE_LIMIT = 60; // 60 requests per hour
@@ -852,14 +858,14 @@ border-radius: 8px; will-change: transform;">
           .then(data => {
             const repoList = document.getElementById('repo-list');
             const repoList2 = document.getElementById('repo-list-2');
-            // Urutkan data.items berdasarkan tanggal update
-            data.items.sort((a, b) => Date.parse(b.updated_at) - Date.parse(a.updated_at));
-            data.items.forEach(repo => {
-              fetchWithRateLimit(`https://api.github.com/repos/${repo.owner.login}/${repo.name}/contents/`)
+            const sortedRepos = data.items.sort((a, b) => Date.parse(b.updated_at) - Date.parse(a.updated_at));
+
+            const promises = sortedRepos.map(repo => {
+              return fetchWithRateLimit(`https://api.github.com/repos/${repo.owner.login}/${repo.name}/contents/`)
                 .then(filesData => {
                   const hasThumbnail = filesData.some(file => file.name === 'thumbnail.png');
                   const updatedAt = moment(repo.updated_at).fromNow();
-                  fetchWithRateLimit(`https://api.github.com/repos/${repo.full_name}/languages`)
+                  return fetchWithRateLimit(`https://api.github.com/repos/${repo.full_name}/languages`)
                     .then(languages => {
                       const badgeClasses = [
                         'badge-primary',
@@ -885,74 +891,80 @@ border-radius: 8px; will-change: transform;">
                       }).join(' ');
 
                       const repoHTML = `
-                                    <div class="col-lg-4 col-md-6 item-recent" data-category="github">
-                                    <div class="card card-block card-stretch card-height">
-                                        <div class="card-header">
-                                        <h5 class="float-left"><a href="${repo.html_url}" class="repo-name">${repo.full_name.split('/')[1].slice(0, 20)}${repo.full_name.split('/')[1].length > 20 ? ' ...' : ''}</a></h5>
-                                        <div class="float-right"><span class="ri-star-fill m-0 text-warning stargazers_count"></span><span class="m-0 stargazers_count">${repo.stargazers_count}</span></div>
-                                        </div>
-                                        <div class="card-body">
-                                        ${(hasThumbnail) ? `<img src="https://raw.githubusercontent.com/${repo.owner.login}/${repo.name}/master/thumbnail.png" class="img-fluid rounded" alt="thumbnail.png" />` : `<img src="../no-image.jpg" class="img-fluid rounded" alt="Responsive image">`}
-                                        <p class="mb-1">${repo.description}</p>
-                
-                                        <p class="mb-1 mt-1">Topics :</p>
-                                        ${tagList}
-                
-                                        <p class="mb-1 mt-1">Languages :</p>
-                                        ${languageList}
-                
-                                        <div class="d-flex align-items-center justify-content-between pt-3 border-top">
-                                            <div class="iq-media-group">
-                                            <a href="#" class="iq-media">
-                                                <img class="img-fluid avatar-40 rounded-circle"
-                                                src="${repo.owner.avatar_url}" alt="${repo.owner.login}">
-                                            </a>
+                                        <div class="col-lg-4 col-md-6 item-recent" data-category="github">
+                                        <div class="card card-block card-stretch card-height">
+                                            <div class="card-header">
+                                            <h5 class="float-left"><a href="${repo.html_url}" class="repo-name">${repo.full_name.split('/')[1].slice(0, 20)}${repo.full_name.split('/')[1].length > 20 ? ' ...' : ''}</a></h5>
+                                            <div class="float-right"><span class="ri-star-fill m-0 text-warning stargazers_count"></span><span class="m-0 stargazers_count">${repo.stargazers_count}</span></div>
                                             </div>
-                                            <small class="text-muted">Last updated ${updatedAt}</small>
+                                            <div class="card-body">
+                                            ${(hasThumbnail) ? `<img src="https://raw.githubusercontent.com/${repo.owner.login}/${repo.name}/master/thumbnail.png" class="img-fluid rounded" alt="thumbnail.png" />` : `<img src="../no-image.jpg" class="img-fluid rounded" alt="Responsive image">`}
+                                            <p class="mb-1">${repo.description}</p>
+                    
+                                            <p class="mb-1 mt-1">Topics :</p>
+                                            ${tagList}
+                    
+                                            <p class="mb-1 mt-1">Languages :</p>
+                                            ${languageList}
+                    
+                                            <div class="d-flex align-items-center justify-content-between pt-3 border-top">
+                                                <div class="iq-media-group">
+                                                <a href="#" class="iq-media">
+                                                    <img class="img-fluid avatar-40 rounded-circle"
+                                                    src="${repo.owner.avatar_url}" alt="${repo.owner.login}">
+                                                </a>
+                                                </div>
+                                                <small class="text-muted">Last updated ${updatedAt}</small>
+                                            </div>
+                                            </div>
                                         </div>
                                         </div>
-                                    </div>
-                                    </div>
-                                `;
+                                    `;
 
 
                       const repoHTML2 = `
-                        <div class="col-lg-6 item-recent" data-category="github">
-                            <div class="card">
-                                <div class="card-body">
-                                    <div class="row">
-                                        <div class="col-sm-8">
-                                            <div class="d-flex align-items-center">
-                                                ${(hasThumbnail) ? `<img src="https://raw.githubusercontent.com/${repo.owner.login}/${repo.name}/master/thumbnail.png" class="img-thumbnail w-100 img-fluid rounded" alt="thumbnail.png" />` : `<img src="../no-image.jpg" class="img-thumbnail w-100 img-fluid rounded" alt="Responsive image">`}
-                                                <div class="ml-3 col-sm-8">
-                                                    <h5 class="mb-1"><a href="${repo.html_url}" class="repo-name">${repo.full_name.split('/')[1].slice(0, 20)}${repo.full_name.split('/')[1].length > 20 ? ' ...' : ''}</a></h5>
-                                                    <p class="mb-1">${repo.description}</p>
-            
-            
-                            <p class="mb-1 mt-1">Languages :</p>
-                            ${languageList}
+                            <div class="col-lg-6 item-recent" data-category="github">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-sm-8">
+                                                <div class="d-flex align-items-center">
+                                                    ${(hasThumbnail) ? `<img src="https://raw.githubusercontent.com/${repo.owner.login}/${repo.name}/master/thumbnail.png" class="img-thumbnail w-100 img-fluid rounded" alt="thumbnail.png" />` : `<img src="../no-image.jpg" class="img-thumbnail w-100 img-fluid rounded" alt="Responsive image">`}
+                                                    <div class="ml-3 col-sm-8">
+                                                        <h5 class="mb-1"><a href="${repo.html_url}" class="repo-name">${repo.full_name.split('/')[1].slice(0, 20)}${repo.full_name.split('/')[1].length > 20 ? ' ...' : ''}</a></h5>
+                                                        <p class="mb-1">${repo.description}</p>
+                
+                
+                                <p class="mb-1 mt-1">Languages :</p>
+                                ${languageList}
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                        <div class="col-sm-4 text-sm-right mt-3 mt-sm-0">
-                                            <div class="iq-media-group">
-                                                <a href="#" class="iq-media">
-                                                    <img class="img-fluid avatar-40 rounded-circle"
-                                                        src="${repo.owner.avatar_url}" alt="${repo.owner.login}">
-                                                </a>
+                                            <div class="col-sm-4 text-sm-right mt-3 mt-sm-0">
+                                                <div class="iq-media-group">
+                                                    <a href="#" class="iq-media">
+                                                        <img class="img-fluid avatar-40 rounded-circle"
+                                                            src="${repo.owner.avatar_url}" alt="${repo.owner.login}">
+                                                    </a>
+                                                </div>
+                                                <small class="text-muted">Last updated ${updatedAt}</small>
                                             </div>
-                                            <small class="text-muted">Last updated ${updatedAt}</small>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    `;
+                        `;
 
-                      repoList.innerHTML += repoHTML;
-                      repoList2.innerHTML += repoHTML2;
+                      return { repoHTML, repoHTML2 };
                     });
                 });
+            });
+
+            Promise.all(promises).then(results => {
+              results.forEach(({ repoHTML, repoHTML2 }) => {
+                repoList.innerHTML += repoHTML;
+                repoList2.innerHTML += repoHTML2;
+              });
             });
           });
       })
@@ -1002,8 +1014,76 @@ border-radius: 8px; will-change: transform;">
             });
           });
       });
+
   </script>
 
+
+<script type="module">
+  import config from './config.js';
+
+  async function main() {
+      const { apiKey, clientId, clientSecret } = await config();
+
+      // Load the auth2 module
+      await gapi.load('auth2', () => {
+          // Wait for the auth2 instance to be available
+          gapi.auth2.init({
+              client_id: clientId,
+              client_secret: clientSecret,
+              redirect_uri: 'https://omeans-team.github.io',
+          }).then(() => {
+              // Create an instance of the auth2 module
+              const auth = gapi.auth2.getAuthInstance();
+
+              // Authenticate and authorize the API request
+              auth.authorize((err, tokens) => {
+                  if (err) {
+                      console.error(err);
+                      return;
+                  }
+
+                  // Fetch the video data from the API
+                  fetch(`${apiUrl}videos`, {
+                      method: 'GET',
+                      headers: {
+                          'Authorization': `Bearer ${tokens.access_token}`,
+                      },
+                      params,
+                  })
+                      .then(response => response.json())
+                      .then(data => {
+                          // Render the video items
+                          const videoContainer = document.querySelector('.video-container');
+
+                          data.items.forEach(video => {
+                              const videoItem = document.createElement('div');
+                              videoItem.className = 'video-item';
+
+                              const thumbnail = document.createElement('img');
+                              thumbnail.className = 'video-thumbnail';
+                              thumbnail.src = video.snippet.thumbnails.default.url;
+                              videoItem.appendChild(thumbnail);
+
+                              const title = document.createElement('h2');
+                              title.className = 'video-title';
+                              title.textContent = video.snippet.title;
+                              videoItem.appendChild(title);
+
+                              const playButton = document.createElement('button');
+                              playButton.textContent = 'Play';
+                              videoItem.appendChild(playButton);
+
+                              videoContainer.appendChild(videoItem);
+                          });
+                      })
+                      .catch(err => console.error(err));
+              });
+          });
+      });
+  }
+
+  main();
+</script>
 
   <!-- Backend Bundle JavaScript -->
   <script src="../recent-work/assets/js/backend-bundle.min.js"></script>
