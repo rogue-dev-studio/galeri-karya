@@ -5,9 +5,9 @@
 @Last Modified time: 2026-08-14 16:45:00
 -->
 
-# recent-work
+# Galeri Karya (`galeri-karya`)
 
-Arsip galeri karya lama (template dashboard + daftar repo GitHub). **Bukan** situs portfolio aktif.
+Galeri karya lama (template dashboard + daftar repo). **Bukan** situs portfolio aktif.
 
 Portfolio yang dipakai sekarang: [rogue-dev-studio.github.io](https://rogue-dev-studio.github.io/)
 
