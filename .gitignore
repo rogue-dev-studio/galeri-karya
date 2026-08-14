@@ -1,7 +1,7 @@
-html
-backend
-app
-images
-no-image.jpg
+node_modules/
+.env
+.env.*
+*.pem
+.DS_Store
+.vscode/
 local.html
-favicon.png
