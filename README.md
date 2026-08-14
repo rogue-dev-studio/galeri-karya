@@ -13,8 +13,8 @@ Portfolio yang dipakai sekarang: [rogue-dev-studio.github.io](https://rogue-dev-
 
 ## Status
 
-- Halaman GitHub Pages di repo ini hanya pengarah ke situs baru.
-- Versi lama menarik **GitHub token dari gist publik** di browser. Itu sudah dihapus dari kode. Jika gist `omeans-team` masih berisi PAT, cabut token itu di GitHub.
+- Galeri lama tetap bisa dibuka. Ada popup: **Buka portfolio** (pindah manual) atau **Tetap di sini**.
+- Daftar kartu diambil dari `catalog.json` publik, tanpa GitHub token di browser.
 - Folder `assets/` masih berisi vendor template lama (termasuk `node_modules` yang pernah ter-commit). Jangan dipakai sebagai pola repo baru.
 
 ## Bukan
